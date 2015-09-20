@@ -11,7 +11,7 @@ use CGI;
 use MIME::Base64;
 use POSIX qw(strftime);
 
-my %cfg=(mpdhost => 'inferno',
+my %cfg=(mpdhost => 'pyromachy',
          host => 'radiant.homenet.firedrake.org',
          port => ':8080',
          script => '/cgi-bin/radio.cgi',
@@ -217,6 +217,9 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
       push @{$i{f}},$item;
     }
   }
+  @{$i{d}}=sort {lc($a->directory) cmp lc($b->directory)} @{$i{d}};
+  @{$i{p}}=sort {$a->playlist cmp $b->playlist} @{$i{p}};
+  @{$i{f}}=sort {$a->file cmp $b->file} @{$i{f}};
 }
 {
   my @item;
@@ -232,8 +235,8 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
     (my $dn=$dir->directory) =~ s/.*\///;
     push @item,{path => eb64($dir->directory),
                 name => $dn};
-    if (substr($dn,0,1) ne $ll) {
-      $ll=substr($dn,0,1);
+    if (uc(substr($dn,0,1)) ne $ll) {
+      $ll=uc(substr($dn,0,1));
       $item[-1]{key}=$ll;
       push @{$p{dirheaders}},{key => $ll};
     }
@@ -386,7 +389,7 @@ __DATA__
 
 <table><tr>
 <tmpl_if name=play>
-<td><a href="http://inferno.homenet.firedrake.org:8000/stream">stream</a></td>
+<td><a href="http://pyromachy.homenet.firedrake.org:8000/stream">stream</a></td>
 <td><a href="<tmpl_var name=uri>?crop=1">clear</a></td>
 <tmpl_if name=qf>
 <td><a href="<tmpl_var name=uri>?eqf=1">cancel <tmpl_var name=qf escape=html></a></td>
