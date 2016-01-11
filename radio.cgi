@@ -128,6 +128,16 @@ if (exists $param{eqf}) {
   $r=1;
 }
 
+if (exists $param{pause}) {
+  $mpd->pause(1);
+  $r=1;
+}
+
+if (exists $param{resume}) {
+  $mpd->pause(0);
+  $r=1;
+}
+
 if (defined $mpd->status->updating_db && $mpd->status->updating_db==1) {
   $p{updating}=1;
 }
@@ -141,7 +151,11 @@ if ($r) {
   my $np=-1;
   if ($mpd->status->state ne 'stop') {
     $np=$mpd->status->song;
-    $p{play}=1;
+    if ($mpd->status->state eq 'play') {
+      $p{play}=1;
+    } else {
+      $p{pause}=1;
+    }
   }
   my @pl=$pl->as_items;
   if ($np>$cfg{history}) {
@@ -303,7 +317,7 @@ $tmpl->param(%p);
 
 my $cookie=CGI->cookie(-name => 'yokusou.path',
                        -value => $ep  ,
-                       -expires => '+2m',
+                       -expires => '+2d',
                        -path => $cfg{script},
                        -domain => $cfg{host},
                        );
@@ -394,6 +408,10 @@ __DATA__
 <tmpl_if name=qf>
 <td><a href="<tmpl_var name=uri>?eqf=1">cancel <tmpl_var name=qf escape=html></a></td>
 </tmpl_if>
+<td><a href="<tmpl_var name=uri>?pause=1">pause</a></td>
+</tmpl_if>
+<tmpl_if name=pause>
+<td><a href="<tmpl_var name=uri>?resume=1">resume</a></td>
 </tmpl_if>
 <tmpl_unless name="updating">
 <td><a href="<tmpl_var name=uri>?update=1">update db</a></td>
