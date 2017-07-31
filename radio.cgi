@@ -10,6 +10,7 @@ use HTML::Template;
 use CGI;
 use MIME::Base64;
 use POSIX qw(strftime);
+use Encode qw(encode decode);
 
 my %cfg=(mpdhost => 'pyromachy',
          host => 'radiant.homenet.firedrake.org',
@@ -35,6 +36,13 @@ if ($path eq '/') {
   $path='';
 } else {
   $path=decode_base64($path);
+}
+
+while (! -d "$cfg{musicroot}/$path") {
+  unless ($path =~ s/\/[^\/]*$//) {
+    $path='';
+    last;
+  }
 }
 
 if (exists $param{search}) {
@@ -78,13 +86,13 @@ if (exists $param{queue}) {
         while ($r =~ s/[^\/]+\/\.\.\///) {
         }
         if (my $s=$coll->song($r)) {
-          $pl->add($r);
+          $pl->add(decode('UTF-8',$r));
         }
       }
       close I;
     }
   } else {
-    $pl->add($qp);
+    $pl->add(decode('UTF-8',$qp));
   }
   if ($mpd->status->state eq 'stop') {
     $mpd->play($start);
@@ -331,7 +339,7 @@ print $tmpl->output;
 
 sub eb64 {
   my $in=shift;
-  my $out=encode_base64($in);
+  my $out=encode_base64(encode('UTF-8',$in));
   $out =~ s/\s+//g;
   return $out;
 }
@@ -434,11 +442,11 @@ __DATA__
 <table>
 <tmpl_loop name=list>
 <tr<tmpl_if name=status.1> bgcolor=#d0d0d0</tmpl_if>>
-<td><tmpl_var name=title escape=html></td>
-<td><tmpl_var name=artist escape=html></td>
-<td><tmpl_var name=album escape=html></td>
-<td><tmpl_var name=starttime escape=html></td>
-<td><tmpl_var name=length escape=html></td>
+<td valign=top><tmpl_var name=title escape=html><br>
+<tmpl_var name=artist escape=html><br>
+<tmpl_var name=album escape=html></td>
+<td valign=top><tmpl_var name=starttime escape=html><br>
+<tmpl_var name=length escape=html></td>
 <td><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>">Requeue</a></td>
 <tmpl_if name=status.1>
 <td><a href="<tmpl_var name=uri>?skip=1">Skip</a></td>
