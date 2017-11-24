@@ -11,6 +11,7 @@ use CGI;
 use MIME::Base64;
 use POSIX qw(strftime);
 use Encode qw(encode decode);
+use utf8;
 
 my %cfg=(mpdhost => 'pyromachy',
          host => 'radiant.homenet.firedrake.org',
@@ -290,16 +291,22 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
   my @item;
   if ($i{f}) {
     foreach my $f (sort {$a->file cmp $b->file} @{$i{f}}) {
-      my $name='';
+      my $y=get_meta($f);
+      my $name=$y->{title};
+      my $albumname=($y->{artist} || 'unknown artist').' – '.($y->{album} || 'unknown album');
+      my $search=0;
+      my $mp='';
       if ($path =~ /^:search:([^:]*):(.*)/) {
-        my $y=get_meta($f);
-        $name=$y->{title}.' ('.($y->{artist}).')'.' ('.($y->{album}).')';
+        ($mp=$f->file) =~ s/\/[^\/]*$//;
       } else {
         $name=get_meta($f)->{title};
       }
       push @item,{path => $ep,
                   queue => eb64($f->file),
-                  name => $name};
+                  name => $name,
+                  albumname => $albumname,
+                  albumpath => eb64($mp),
+                };
     }
   }
   if (@item) {
@@ -442,10 +449,10 @@ __DATA__
 <table>
 <tmpl_loop name=list>
 <tr<tmpl_if name=status.1> bgcolor=#d0d0d0</tmpl_if>>
-<td valign=top><tmpl_var name=title escape=html><br>
-<tmpl_var name=artist escape=html><br>
-<tmpl_var name=album escape=html></td>
-<td valign=top><tmpl_var name=starttime escape=html><br>
+<td valign=top><tmpl_var name=title escape=html><tmpl_unless name=status.0><br>
+<b><tmpl_var name=artist escape=html></b><br>
+<i><tmpl_var name=album escape=html></i></tmpl_unless></td>
+<td valign=top><tmpl_unless name=status.0><tmpl_var name=starttime escape=html><br></tmpl_unless>
 <tmpl_var name=length escape=html></td>
 <td><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>">Requeue</a></td>
 <tmpl_if name=status.1>
@@ -487,7 +494,7 @@ __DATA__
 <tmpl_if name=track>
 <tmpl_if name=search><ul><tmpl_else><ol></tmpl_if>
 <tmpl_loop name=track>
-<li><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>"><tmpl_var name=name escape=html></a></li>
+<li><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>"><tmpl_var name=name escape=html></a><tmpl_if name=albumpath> [<a href="<tmpl_var name=uri>?path=<tmpl_var name=albumpath escape=html>"><tmpl_var name=albumname escape=html></a>]</tmpl_if></li>
 </tmpl_loop>
 <tmpl_if name=search></ul><tmpl_else></ol></tmpl_if>
 <hr>
