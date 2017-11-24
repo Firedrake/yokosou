@@ -246,13 +246,6 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
 }
 {
   my @item;
-  if ($path) {
-    push @item,{first => 1,path => '',name => 'Root'};
-    if ($path =~ /\//) {
-      (my $pp=$path) =~ s/\/[^\/]+$//;
-      push @item,{path => eb64($pp),name => 'Parent'};
-    }
-  }
   my $ll='';
   foreach my $dir (@{$i{d}}) {
     (my $dn=$dir->directory) =~ s/.*\///;
@@ -289,6 +282,19 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
 }
 {
   my @item;
+  if ($path) {
+    push @item,{path => '',name => 'Root',first => 1};
+    my @p=split '/',$path;
+    foreach my $n (0..$#p) {
+      push @item,{path => eb64(join('/',@p[0..$n])),
+                  name => $p[$n],
+                };
+    }
+    $p{breadcrumb}=\@item;
+  }
+}
+{
+  my @item;
   if ($i{f}) {
     foreach my $f (sort {$a->file cmp $b->file} @{$i{f}}) {
       my $y=get_meta($f);
@@ -315,6 +321,7 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
 }
 $p{uri}=$uri;
 $p{path}=$path;
+($p{displaypath}=$path) =~ s/\// » /g;
 $p{ep}=$ep;
 $p{qf}=read_qf();
 my $ref=60;
@@ -511,6 +518,13 @@ __DATA__
 <h2><a name="<tmpl_var name=key escape=html>"><tmpl_var name=key escape=html></a></h2>
 </tmpl_if>
 <a href="<tmpl_var name=uri>?path=<tmpl_var name=path escape=html>"><tmpl_var name=name escape=html></a><br>
+</tmpl_loop>
+<hr>
+</tmpl_if>
+
+<tmpl_if name=breadcrumb>
+<tmpl_loop name=breadcrumb>
+<tmpl_unless name=first> » </tmpl_unless><a href="<tmpl_var name=uri>?path=<tmpl_var name=path escape=html>"><tmpl_var name=name escape=html></a>
 </tmpl_loop>
 <hr>
 </tmpl_if>
