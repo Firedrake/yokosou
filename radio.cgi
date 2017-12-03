@@ -298,18 +298,16 @@ if ($path =~ /^:search:([^:]*):(.*)/) {
   if ($i{f}) {
     foreach my $f (sort {$a->file cmp $b->file} @{$i{f}}) {
       my $y=get_meta($f);
-      my $name=$y->{title};
       my $albumname=($y->{artist} || 'unknown artist').' – '.($y->{album} || 'unknown album');
       my $search=0;
       my $mp='';
       if ($path =~ /^:search:([^:]*):(.*)/) {
         ($mp=$f->file) =~ s/\/[^\/]*$//;
-      } else {
-        $name=get_meta($f)->{title};
       }
       push @item,{path => $ep,
                   queue => eb64($f->file),
-                  name => $name,
+                  name => $y->{title},
+                  length => $y->{length},
                   albumname => $albumname,
                   albumpath => eb64($mp),
                 };
@@ -382,14 +380,8 @@ sub get_meta {
   $o{title}=$f->title || $o{title};
   $o{artist}=$f->artist || $o{artist};
   $o{album}=$f->album || $o{album};
-  {
-    $o{len}=$f->time || 0;
-    my $mm=int($o{len}/60);
-    my $ss=$o{len} % 60;
-    $o{length}=sprintf('%04d:%02d',$mm,$ss);
-    $o{length} =~ s/^0+//;
-    $o{length} =~ s/^:/0:/;
-  }
+  $o{len}=$f->time || 0;
+  $o{length}=format_time($o{len});
   $o{id}=$f->id;
   return \%o;
 }
@@ -413,6 +405,16 @@ sub read_qf {
     last;
   }
   close I;
+  return $out;
+}
+
+sub format_time {
+  my $t=shift;
+  my $mm=int($t/60);
+  my $ss=$t % 60;
+  my $out=sprintf('%04d:%02d',$mm,$ss);
+  $out =~ s/^0+//;
+  $out =~ s/^:/0:/;
   return $out;
 }
 
@@ -501,7 +503,7 @@ __DATA__
 <tmpl_if name=track>
 <tmpl_if name=search><ul><tmpl_else><ol></tmpl_if>
 <tmpl_loop name=track>
-<li><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>"><tmpl_var name=name escape=html></a><tmpl_if name=albumpath> [<a href="<tmpl_var name=uri>?path=<tmpl_var name=albumpath escape=html>"><tmpl_var name=albumname escape=html></a>]</tmpl_if></li>
+<li><a href="<tmpl_var name=uri>?queue=<tmpl_var name=queue escape=html>"><tmpl_var name=name escape=html></a> (<tmpl_var name=length>)<tmpl_if name=albumpath> [<a href="<tmpl_var name=uri>?path=<tmpl_var name=albumpath escape=html>"><tmpl_var name=albumname escape=html></a>]</tmpl_if></li>
 </tmpl_loop>
 <tmpl_if name=search></ul><tmpl_else></ol></tmpl_if>
 <hr>
